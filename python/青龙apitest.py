@@ -15,7 +15,7 @@ def gettoken():
 #变量部分
 client_id= "" #这里填写申请到的client_id
 client_secret= ""#这里填写申请到的client_secret
-qlurl= ""#填写青龙的地址根目录
+qlurl= ""#填写反代后青龙的网址
 apiurl=qlurl +"/open"
 url= apiurl+"/envs?t=1633076856051"
 token = gettoken()
@@ -26,6 +26,17 @@ headers={
 }
 pin=""
 
+
+#获取京东昵称
+def getnickname(cookie):
+    geturl="https://get.zzzytd.top/nick.php"
+    payload2 = {
+        'cookie':cookie
+        }
+    d=requests.get(url=geturl,data=json.dumps(payload2))
+    nickname=d.text
+    print (nickname)
+    return nickname
 
 #搜索变量
 def search(searchValue):
@@ -43,20 +54,23 @@ def search(searchValue):
         return ssjg
 
 #添加变量
-def addenv(jdcookie,jdremarks):
+def addenv(jdcookie):
+    jdremarks = getnickname(jdcookie)
     payload2 = [{
         'name': 'JD_COOKIE',
         'remarks':jdremarks,
         'value':jdcookie
         }]
     r = requests.post(url=url, data=json.dumps(payload2),headers=headers)
+    print (r.content)
     return r.content
 
 #更新变量
-def updateenv(ssjg_remarks,jdcookie,ssjg_id):
+def updateenv(jdcookie,ssjg_id):
+    jdremarks = getnickname(jdcookie)
     payload3 = {
         'name': "JD_COOKIE",
-        'remarks': ssjg_remarks,
+        'remarks': jdremarks,
         'value': jdcookie,
         '_id': ssjg_id
         }
@@ -71,11 +85,11 @@ def index():
         jdcookie=request.form['cookie']
         ssjg=search(pin1)
         if ssjg == "error":
-            jg=addenv(jdcookie,pin)
+            jg=addenv(jdcookie)
         elif ssjg['value'] is not None:
             ssjg_id=ssjg['_id']
             ssjg_remarks=ssjg['remarks']
-            jg=updateenv(ssjg_remarks,jdcookie,ssjg_id)
+            jg=updateenv(jdcookie,ssjg_id)
         else:
             return "error"
         return jg

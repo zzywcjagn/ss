@@ -2,34 +2,28 @@ from flask import render_template
 from flask import make_response
 from flask import Flask, session, redirect, url_for, escape, request
 from selenium import webdriver
+from flask_cors import cross_origin
 from selenium.webdriver.chrome.options import Options
-import time,requests,os,sys
+import time,requests,os,sys,json
 
 app = Flask(__name__)
-
-app.secret_key = 'fkdjsaonkqfdlkjfadskjfadskljdsfklj'
+app.secret_key = 'fkdjsafjdkfdlkjfadskjfadskljdsfklj'
 
 @app.route('/')
 
 def index():
-
-    if 'tel' in session:
-
-        tel = session['tel']
-
-        return '登录用户名是:' + tel + '<br>' + \
-        "<b><a href = '/logout'>点击这里注销</a></b><b><a href = '/static/push.html'>点击这里获推送二维码</a></b>"
-    return "您暂未登录， <br><a href = '/login'></b>" + \
-         "点击这里登录</b></a>"
+    return "已经整体改版， <br><a href = 'https://login.rori.cf'></b>" + \
+         "点击这里跳转</b></a>"
 @app.route('/login', methods = ['GET', 'POST'])
-
+@cross_origin()
 def login():
 
     if request.method == 'POST':
-        session['tel'] = request.form['tel']
-        id = request.form['id']
+        data = json.loads(request.get_data(as_text=True))
+        session['tel'] = data['tel']
+        id = data['id']
         if id == "tel":
-            a=request.form['tel']
+            a=data['tel']
             options=webdriver.ChromeOptions()
             # 浏览器不提供可视化页面. linux下如果系统不支持可视化不加这条会启动失败
             options.add_argument('--headless')
@@ -55,10 +49,10 @@ def login():
             driver.find_element_by_xpath('//*[@id="app"]/div/div[3]/p[2]/button').click()
             blsz[a] = driver
             print(blsz)
-            return "请提交验证码"
+            return 'true'
         else:
-            yzm= request.form['yzm']
-            a= request.form['tel']
+            yzm= data['yzm']
+            a= data['tel']
             driver = blsz[a]
             print (driver)
             driver.find_element_by_xpath('//*[@id="authcode"]').clear()
@@ -76,34 +70,26 @@ def login():
             key = key["name"] + "=" + key["value"]+";"
             pin = driver.get_cookie("pt_pin")
             pin1 = pin["value"]
+            #key1 = key["value"]
             pin = pin["name"] + "=" + pin["value"]+";"
             cookie = key + pin
-            print(cookie)
-            url = "http://127.0.0.1:8081/ql"#填写api接口地址
-            payload = {"cookie": cookie,"pin":pin1}
+            #print(cookie)
+            url = "http://127.0.0.1:8081/ql"
+            # payload = {"cookie": cookie}
+            payload = {"pin": pin1,"cookie":cookie}
             r = requests.post(url,data=payload)
             driver.close()
+            blsz[a]=None
             return r.content
         return "error"
-        
-    return app.send_static_file('index1.html') #静态文件是别人搞的 
-
-@app.route('/logout')
-
-def logout():
-
-   # remove the username from the session if it is there
-
-   session.pop('tel', None)
-
-   return redirect(url_for('index'))
+    return "已经整体改版， <br><a href = 'https://login.rori.cf'></b>" + \
+         "点击这里跳转</b></a>"
 
 @app.route('/restart')
 
 def restart():
     os.system("ps aux|grep chrome |grep -v grep|cut -c 9-15|xargs kill -9")
     return "ok"
-    
 
 if __name__ == '__main__':
     blsz={}
